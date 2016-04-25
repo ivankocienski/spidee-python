@@ -25,28 +25,47 @@ class Loader:
     def load_wav(self, path):
         pass
 
-def main():
+class App:
 
-    random.seed()
-    pg.init()
-    pg.font.init()
+    def __init__(self):
+        random.seed()
+        pg.init()
+        pg.font.init()
+        self.screen = pg.display.set_mode([800, 600])
+        self.loader = Loader(self.screen, os.getcwd() + "/data")
+        self.repaint()
+        pg.display.set_caption('Spidee')
 
-    screen = pg.display.set_mode([800, 600])
-    loader = Loader(screen, os.getcwd() + "/data")
+    def draw_text( self, font, x, y, text, color ):
+        text_surface = font.render(text, True, color)
+        self.screen.blit(text_surface, (x, y))
 
-    pg.display.set_caption('Spidee')
+    def repaint(self):
+        self.do_repaint = True
 
-    g = Game(loader)
-    g.resize(screen)
-    g.reset()
+    def main(self):
 
-    while(True):
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                return 
-        
-        g.draw(screen)
-    
-        pg.display.flip()
+        g = Game(self)
+        g.resize()
+        g.reset()
 
-if __name__ == "__main__": main()
+        while(True):
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return 
+
+                elif event.type == pg.MOUSEMOTION:
+                    g.mouse_move(event.pos[0], event.pos[1])
+
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    g.mouse_down()
+
+                elif event.type == pg.MOUSEBUTTONUP:
+                    g.mouse_up()
+            
+            if self.do_repaint:
+                self.do_repaint = False
+                g.draw()
+                pg.display.flip()
+
+if __name__ == "__main__": App().main()
