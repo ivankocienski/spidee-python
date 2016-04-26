@@ -36,7 +36,7 @@ class Dealer:
 
         return True
 
-    def deal(self, columns):
+    def deal(self, screen, columns):
         if self.runs_to_deal == 0:
             return
 
@@ -45,6 +45,7 @@ class Dealer:
         for col in columns:
             col.push(self.next_card())
             col.turn_over_top_card()
+            col.adjust_gap(screen)
 
     def reset(self):
         self.runs_to_deal = 6
@@ -55,6 +56,8 @@ class Dealer:
                 Card(x%CARD_COUNT, SUIT_CLUBS, self.card_sprites, self.card_down)
                 for x in range(0, 104)]
         
+        return # for debugging
+
         # shuffle deck
         for i in range(0, len(self.source_deck)):
             other = random.randint(0, len(self.source_deck)-1)

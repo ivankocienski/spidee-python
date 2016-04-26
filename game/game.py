@@ -28,9 +28,11 @@ class Game:
         self.drag_yoffs       = 0
         self.drag_xpos        = 0
         self.drag_ypos        = 0
+        self.drag_gap         = 0
 
         self.over      = -1
         self.over_card = None
+        self.over_gap  = 0
 
     def _draw_bg(self):
 
@@ -59,10 +61,10 @@ class Game:
     def reset(self):
         self.dealer.reset()
 
-        for i in range(0, 35):
+        for i in range(0, 44):
             self.columns[i%len(self.columns)].push(self.dealer.next_card())
 
-        self.dealer.deal(self.columns)
+        self.dealer.deal(self.app.screen, self.columns)
 
         #for c in self.columns:
         #    c.turn_over_top_card()
@@ -87,6 +89,7 @@ class Game:
         if self.over == -1:
             self.over_card = None
         else:
+            self.over_gap = self.columns[self.over].card_gap
             found = self.columns[self.over].over_card(xp, yp)
             if found:
                 self.over_card  = found[0]
@@ -101,11 +104,12 @@ class Game:
             self.drag_cards = self.columns[self.over].pop(self.over_card)
             self.drag_xoffs = self.over_xoffs
             self.drag_yoffs = self.over_yoffs
+            self.drag_gap   = self.over_gap
             self.app.repaint()
             return
 
         if self.dealer.is_mouse_over(self.app.screen, self.drag_xpos, self.drag_ypos):
-            self.dealer.deal(self.columns)
+            self.dealer.deal(self.app.screen, self.columns)
             self.app.repaint()
 
 
@@ -114,12 +118,16 @@ class Game:
             try_column = self.columns[self.over]
             if try_column.can_card_be_pushed(self.drag_cards[0]):
                 try_column.push(self.drag_cards)
+                try_column.adjust_gap(self.app.screen)
                 self.drag_from_column.turn_over_top_card()
+                self.drag_from_column.adjust_gap(self.app.screen)
 
                 column_run = try_column.ends_in_run()
                 if column_run:
                     self.done_pile.deposite_run()
                     try_column.pop(column_run)
+                    try_column.turn_over_top_card()
+                    try_column.adjust_gap(self.app.screen)
 
             else:
                 self.drag_from_column.push(self.drag_cards)
@@ -142,7 +150,7 @@ class Game:
             draw_y = self.drag_ypos + self.drag_yoffs
             for card in self.drag_cards:
                 card.draw(self.app.screen, draw_x, draw_y)
-                draw_y += PADDING
+                draw_y += self.drag_gap
 
         
         self.app.draw_text(

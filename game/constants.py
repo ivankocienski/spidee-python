@@ -1,6 +1,7 @@
-PADDING     = 10
-CARD_WIDTH  = 71
-CARD_HEIGHT = 96
+PADDING      = 10
+CARD_MAX_GAP = 25
+CARD_WIDTH   = 71
+CARD_HEIGHT  = 96
 
 SUIT_NAMES = [ 'clubs', 'hearts', 'spades', 'diamonds' ]
 SUIT_CLUBS    = 0

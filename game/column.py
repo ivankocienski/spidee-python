@@ -6,6 +6,15 @@ class Column:
         self.empty_card = empty_card
         self.cards      = []
         self.pos        = 0
+        self.card_gap   = PADDING
+
+    def _card_down_count(self):
+        down_count = 0
+        for c in self.cards:
+            if not c.face_down:
+                break
+            down_count += 1
+        return down_count
 
     def set_pos(self, pos):
         self.pos = pos
@@ -17,7 +26,7 @@ class Column:
         elif type(cards) is list: 
             self.cards.extend(cards)
         else:
-            raise "Column#push: Unknown type '%s'"%type(cards)
+            raise BaseException("Column#push: Unknown type '%s'"%type(cards))
 
     def pop(self, card):
         pos = 0
@@ -30,8 +39,21 @@ class Column:
         self.cards = self.cards[0:pos]
         return ret
 
-    def adjust_gap(self):
-        pass
+    def adjust_gap(self, screen):
+
+        if len(self.cards) > 0:
+            down_count = self._card_down_count()
+
+            height  = screen.get_height()
+            height -= PADDING     * 3 # margins
+            height -= CARD_HEIGHT * 2
+            height -= down_count  * PADDING
+
+            gap = int(height / (len(self.cards) - down_count))
+            if gap > CARD_MAX_GAP:
+                gap = CARD_MAX_GAP
+
+            self.card_gap = gap
 
     def ends_in_run(self):
         if len(self.cards) < CARD_COUNT:
@@ -50,15 +72,20 @@ class Column:
 
         ypos      = PADDING 
         last_card = self.cards[0]
+        last_ypos = ypos
 
         for card in self.cards:
             if ypos > cursor_ypos:
-                return (last_card, self.pos-cursor_xpos, ypos-cursor_ypos-PADDING)
+                return (last_card, self.pos-cursor_xpos, last_ypos-cursor_ypos)
 
             last_card = card
-            ypos     += PADDING
+            last_ypos = ypos
+            if card.face_down:
+                ypos += PADDING
+            else:
+                ypos += self.card_gap
         
-        return (self.cards[-1], self.pos-cursor_xpos, ypos-cursor_ypos-PADDING)
+        return (self.cards[-1], self.pos-cursor_xpos, last_ypos-cursor_ypos)
 
     def can_card_be_pushed(self, card):
         return len(self.cards) == 0 or card.can_go_on(self.cards[-1])
@@ -67,7 +94,11 @@ class Column:
         if xp < self.pos or xp >= (self.pos+CARD_WIDTH):
             return False
 
-        max_y = PADDING + CARD_HEIGHT + (len(self.cards)-1) * PADDING 
+        down_count = self._card_down_count()
+        max_y  = PADDING
+        max_y += PADDING * down_count
+        max_y += self.card_gap * (len(self.cards)-down_count)
+        max_y += CARD_HEIGHT
         if yp < PADDING or yp >= max_y:
             return False
 
@@ -86,7 +117,10 @@ class Column:
             ypos = PADDING
             for c in self.cards:
                 c.draw(screen, self.pos, ypos)
-                ypos += PADDING
+                if c.face_down:
+                    ypos += PADDING
+                else:
+                    ypos += self.card_gap
 
 
 
