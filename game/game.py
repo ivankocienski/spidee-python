@@ -5,6 +5,7 @@ from game.constants import *
 from game.dealer import Dealer
 from game.card import Card
 from game.column import Column
+from game.done_pile import DonePile
 
 class Game:
     def __init__(self, app):
@@ -17,8 +18,9 @@ class Game:
         self.font         = app.loader.load_ttf("liberation-sans.ttf", 15)
 
         # game structures
-        self.columns = [ Column(self.card_empty) for x in  range(10)]
-        self.dealer  = Dealer(self.card_sprites, self.card_down)
+        self.columns   = [ Column(self.card_empty) for x in range(10)]
+        self.dealer    = Dealer(self.card_sprites, self.card_down)
+        self.done_pile = DonePile(self.card_sprites)
         
         self.drag_cards       = None
         self.drag_from_column = None
@@ -57,11 +59,13 @@ class Game:
     def reset(self):
         self.dealer.reset()
 
-        for i in range(0, 55):
+        for i in range(0, 35):
             self.columns[i%len(self.columns)].push(self.dealer.next_card())
 
-        for c in self.columns:
-            c.turn_over_top_card()
+        self.dealer.deal(self.columns)
+
+        #for c in self.columns:
+        #    c.turn_over_top_card()
 
     def mouse_move(self, xp, yp):
 
@@ -98,6 +102,12 @@ class Game:
             self.drag_xoffs = self.over_xoffs
             self.drag_yoffs = self.over_yoffs
             self.app.repaint()
+            return
+
+        if self.dealer.is_mouse_over(self.app.screen, self.drag_xpos, self.drag_ypos):
+            self.dealer.deal(self.columns)
+            self.app.repaint()
+
 
     def mouse_up(self):
         if self.drag_cards:
@@ -105,6 +115,11 @@ class Game:
             if try_column.can_card_be_pushed(self.drag_cards[0]):
                 try_column.push(self.drag_cards)
                 self.drag_from_column.turn_over_top_card()
+
+                column_run = try_column.ends_in_run()
+                if column_run:
+                    self.done_pile.deposite_run()
+                    try_column.pop(column_run)
 
             else:
                 self.drag_from_column.push(self.drag_cards)
@@ -117,6 +132,7 @@ class Game:
         self._draw_bg()
 
         self.dealer.draw(self.app.screen)
+        self.done_pile.draw(self.app.screen)
 
         for c in self.columns:
             c.draw(self.app.screen)

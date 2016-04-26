@@ -20,13 +20,39 @@ class Dealer:
         else:
             return None
 
+    def is_mouse_over(self, screen, xpos, ypos):
+        if self.runs_to_deal == 0:
+            return
+
+        max_y = screen.get_height() - PADDING
+        min_y = max_y - CARD_HEIGHT 
+        if ypos < min_y or ypos > max_y:
+            return False
+
+        max_x = screen.get_width() - PADDING
+        min_x = max_x - CARD_WIDTH - (self.runs_to_deal-1)*PADDING
+        if xpos < min_x or xpos > max_x:
+            return False
+
+        return True
+
+    def deal(self, columns):
+        if self.runs_to_deal == 0:
+            return
+
+        self.runs_to_deal -= 1
+
+        for col in columns:
+            col.push(self.next_card())
+            col.turn_over_top_card()
+
     def reset(self):
         self.runs_to_deal = 6
         self.source_pos   = 0
 
         # build deck
         self.source_deck  = [
-                Card(x%CARD_MAX, SUIT_CLUBS, self.card_sprites, self.card_down)
+                Card(x%CARD_COUNT, SUIT_CLUBS, self.card_sprites, self.card_down)
                 for x in range(0, 104)]
         
         # shuffle deck

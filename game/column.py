@@ -11,10 +11,13 @@ class Column:
         self.pos = pos
 
     def push(self, cards):
+        #print("type=%s"%type(cards))
         if type(cards) is Card:
             self.cards.append(cards)
-        else: 
+        elif type(cards) is list: 
             self.cards.extend(cards)
+        else:
+            raise "Column#push: Unknown type '%s'"%type(cards)
 
     def pop(self, card):
         pos = 0
@@ -27,7 +30,24 @@ class Column:
         self.cards = self.cards[0:pos]
         return ret
 
+    def adjust_gap(self):
+        pass
+
+    def ends_in_run(self):
+        if len(self.cards) < CARD_COUNT:
+            return None
+
+        for i in range(0, CARD_COUNT):
+            if self.cards[-i-1].number != i:
+                return None
+
+        return self.cards[-CARD_COUNT]
+
     def over_card(self, cursor_xpos, cursor_ypos):
+
+        if len(self.cards) == 0:
+            return None 
+
         ypos      = PADDING 
         last_card = self.cards[0]
 

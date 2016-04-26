@@ -19,8 +19,8 @@ class Card:
                     (xpos, ypos))
 
     def can_go_on(self, lower_card):
-        print("self=%s"%self)
-        print("lower_card=%s"%lower_card)
+        #print("self=%s"%self)
+        #print("lower_card=%s"%lower_card)
 
         if self.suit != lower_card.suit:
             return False
