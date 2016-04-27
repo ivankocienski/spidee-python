@@ -87,6 +87,25 @@ class Column:
         
         return (self.cards[-1], self.pos-cursor_xpos, last_ypos-cursor_ypos)
 
+    def can_card_be_picked_up(self, card):
+
+        if card.face_down:
+            return False
+
+        last_number = -1
+        for c in self.cards:
+
+            if last_number == -1:
+                if c == card:
+                    last_number = c.number
+                continue
+
+            last_number -= 1
+            if c.number != last_number:
+                return False
+
+        return True
+
     def can_card_be_pushed(self, card):
         return len(self.cards) == 0 or card.can_go_on(self.cards[-1])
 

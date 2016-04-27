@@ -153,9 +153,10 @@ class Game:
         self.app.repaint()
 
     def mouse_down(self):
-        if self.over_card:
-            self.drag_from_column = self.columns[self.over]
-            self.drag_cards = self.columns[self.over].pop(self.over_card)
+        over_column = self.columns[self.over]
+        if self.over_card and over_column.can_card_be_picked_up(self.over_card):
+            self.drag_from_column = over_column
+            self.drag_cards = over_column.pop(self.over_card)
             self.drag_xoffs = self.over_xoffs
             self.drag_yoffs = self.over_yoffs
             self.drag_gap   = self.over_gap
