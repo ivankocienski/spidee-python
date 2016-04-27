@@ -1,6 +1,8 @@
 
 import random
 
+import pygame as pg
+
 from game.constants import *
 from game.dealer import Dealer
 from game.card import Card
@@ -8,6 +10,56 @@ from game.column import Column
 from game.done_pile import DonePile
 
 class Game:
+
+    class ScoreBox:
+        def __init__(self, font):
+            self.font  = font
+            self.color = (255,255,255)
+            self.reset()
+        
+        def reset(self):
+            self.move_count = 0
+            self.score      = 500
+            self._render()
+
+        def _render(self): 
+            self.score_text_surface = self.font.render("Score: %d"%self.score, True, self.color)
+            self.moves_text_surface = self.font.render("Moves: %d"%self.move_count, True, self.color)
+
+        def inc_score(self):
+            self.score += 100
+            self._render()
+
+        def inc_moves(self):
+            self.score      -= 1
+            self.move_count += 1
+            self._render()
+
+        def draw(self, screen):
+
+            box_w = 200
+            box_h = CARD_HEIGHT
+            xpos = (screen.get_width() - box_w) / 2
+            ypos = screen.get_height() - PADDING - box_h
+            pg.draw.rect(
+                    screen,
+                    (0,150,0),
+                    (xpos, ypos, box_w, box_h))
+
+            pg.draw.rect(
+                    screen,
+                    (0,50,0),
+                    (xpos, ypos, box_w, box_h),
+                    1)
+
+            screen.blit(
+                    self.score_text_surface,
+                    (xpos + 55, ypos + 25))
+
+            screen.blit(
+                    self.moves_text_surface,
+                    (xpos + 55, ypos + 55))
+
     def __init__(self, app):
         self.app          = app
         self.bg_image     = app.loader.load_image("bg.png")
@@ -21,6 +73,8 @@ class Game:
         self.columns   = [ Column(self.card_empty) for x in range(10)]
         self.dealer    = Dealer(self.card_sprites, self.card_down)
         self.done_pile = DonePile(self.card_sprites)
+
+        self.score_box = Game.ScoreBox(self.font)
         
         self.drag_cards       = None
         self.drag_from_column = None
@@ -48,7 +102,7 @@ class Game:
                 self.app.screen.blit(self.bg_image, (x, y))
                 x += bg_width
             y += bg_height
-    
+
     def resize(self):
         step = self.app.screen.get_width() / float(len(self.columns))
         xpos = (step - CARD_WIDTH) / 2.0
@@ -121,6 +175,7 @@ class Game:
                 try_column.adjust_gap(self.app.screen)
                 self.drag_from_column.turn_over_top_card()
                 self.drag_from_column.adjust_gap(self.app.screen)
+                self.score_box.inc_moves()
 
                 column_run = try_column.ends_in_run()
                 if column_run:
@@ -128,6 +183,7 @@ class Game:
                     try_column.pop(column_run)
                     try_column.turn_over_top_card()
                     try_column.adjust_gap(self.app.screen)
+                    self.score_box.inc_score()
 
             else:
                 self.drag_from_column.push(self.drag_cards)
@@ -138,6 +194,8 @@ class Game:
 
     def draw(self):
         self._draw_bg()
+
+        self.score_box.draw(self.app.screen)
 
         self.dealer.draw(self.app.screen)
         self.done_pile.draw(self.app.screen)
