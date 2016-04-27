@@ -60,6 +60,54 @@ class Game:
                     self.moves_text_surface,
                     (xpos + 55, ypos + 55))
 
+    class Hinter:
+        def __init__(self, app, columns):
+            self.app      = app
+            self.columns  = columns
+            self.hints    = []
+            self.hint_pos = 0
+
+            for from_column in self.columns:
+
+                longest_run_card = from_column.longest_run()
+                if not longest_run_card:
+                    continue
+
+                for to_column in self.columns:
+                    if from_column == to_column:
+                        continue
+                    
+                    if to_column.can_card_be_pushed(longest_run_card):
+                        self.hints.append((from_column, longest_run_card, to_column))
+            
+            # TODO: sort these...
+            self.flash_next()
+
+
+        def flash_next(self):
+            if len(self.hints) == 0:
+                return
+
+            from_column = self.hints[self.hint_pos][0]
+            from_card   = self.hints[self.hint_pos][1]
+            to_column   = self.hints[self.hint_pos][2]
+            self.hint_pos = (self.hint_pos+1)%len(self.hints)
+
+            def flash_stop():
+                to_column.set_hint(None)
+                self.app.repaint() 
+
+            def flash_to():
+                from_column.set_hint(None);
+                to_column.hint_last_card()
+                self.app.set_callback(50, flash_stop)
+                self.app.repaint()
+
+            from_column.set_hint(from_card)
+            self.app.set_callback(50, flash_to)
+            self.app.repaint()
+
+
     def __init__(self, app):
         self.app          = app
         self.bg_image     = app.loader.load_image("bg.png")
@@ -74,6 +122,8 @@ class Game:
         self.dealer    = Dealer(self.card_sprites, self.card_down)
         self.done_pile = DonePile(self.card_sprites)
 
+        # helper systems
+        self.hints     = None 
         self.score_box = Game.ScoreBox(self.font)
         
         self.drag_cards       = None
@@ -87,6 +137,8 @@ class Game:
         self.over      = -1
         self.over_card = None
         self.over_gap  = 0
+
+        self.run_over_card = None
 
     def _draw_bg(self):
 
@@ -120,19 +172,10 @@ class Game:
 
         self.dealer.deal(self.app.screen, self.columns)
 
-        #for c in self.columns:
-        #    c.turn_over_top_card()
-
     def mouse_move(self, xp, yp):
 
         self.drag_xpos = xp
         self.drag_ypos = yp
-
-        # skip it if we're moving things about
-        #if self.drag_cards:
-        #    self.app.repaint()
-        #    return
-
 
         self.over = -1
         for i in range(0, len(self.columns)):
@@ -142,7 +185,17 @@ class Game:
 
         if self.over == -1:
             self.over_card = None
+            self.run_over_card = None
         else:
+            #for c in self.columns:
+            #    c.set_hint(None)
+
+            #self.run_over_card = self.columns[self.over].longest_run()
+            #if len(self.columns[self.over].cards) == 0:
+            #    self.columns[self.over].set_hint(True)
+            #else: 
+            #    self.columns[self.over].set_hint(self.run_over_card)
+
             self.over_gap = self.columns[self.over].card_gap
             found = self.columns[self.over].over_card(xp, yp)
             if found:
@@ -172,6 +225,8 @@ class Game:
         if self.drag_cards:
             try_column = self.columns[self.over]
             if try_column.can_card_be_pushed(self.drag_cards[0]):
+                self.hints = None
+
                 try_column.push(self.drag_cards)
                 try_column.adjust_gap(self.app.screen)
                 self.drag_from_column.turn_over_top_card()
@@ -191,6 +246,18 @@ class Game:
 
             self.drag_cards = None
             self.app.repaint()
+
+    def key_down(self, key):
+        if key == pg.K_m:
+            for c in self.columns:
+                c.set_hint(None)
+
+            if self.hints:
+                self.hints.flash_next()
+            else:
+                self.hints = Game.Hinter(
+                        self.app,
+                        self.columns)
 
 
     def draw(self):

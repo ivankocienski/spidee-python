@@ -1,3 +1,4 @@
+import pygame as pg
 from game.constants import *
 from game.card import Card
 
@@ -7,6 +8,7 @@ class Column:
         self.cards      = []
         self.pos        = 0
         self.card_gap   = PADDING
+        self.card_hint  = None
 
     def _card_down_count(self):
         down_count = 0
@@ -106,8 +108,20 @@ class Column:
 
         return True
 
+    def last_card(self):
+        if len(self.cards) == 0:
+            return None
+        
+        return self.cards[-1]
+
     def can_card_be_pushed(self, card):
-        return len(self.cards) == 0 or card.can_go_on(self.cards[-1])
+        return len(self.cards) == 0 or card.can_go_on(self.last_card())
+
+    def set_hint(self, card):
+        self.card_hint = card
+
+    def hint_last_card(self):
+        self.card_hint = self.last_card()
 
     def is_point_over(self, xp, yp):
         if xp < self.pos or xp >= (self.pos+CARD_WIDTH):
@@ -123,19 +137,45 @@ class Column:
 
         return True
 
+    def longest_run(self):
+        hi_card = None
+        last_card = None
+
+        for c in self.cards:
+            if c.face_down:
+                continue
+
+            if not hi_card or last_card.number != c.number+1:
+                hi_card = c
+
+            last_card = c 
+
+        return hi_card
+
 
     def turn_over_top_card(self):
         if len(self.cards) > 0:
-            self.cards[-1].face_down = False
+            self.last_card().face_down = False
 
     def draw(self, screen):
         if len(self.cards) == 0:
-            screen.blit(self.empty_card, (self.pos, PADDING))
+            if self.card_hint:
+                screen.blit(
+                        self.empty_card,
+                        (self.pos, PADDING),
+                        None,
+                        pg.BLEND_RGB_SUB)
+
+            else:
+                screen.blit(self.empty_card, (self.pos, PADDING))
 
         else: 
             ypos = PADDING
+            hint = False
             for c in self.cards:
-                c.draw(screen, self.pos, ypos)
+                if c == self.card_hint:
+                    hint = True
+                c.draw(screen, self.pos, ypos, hint)
                 if c.face_down:
                     ypos += PADDING
                 else:

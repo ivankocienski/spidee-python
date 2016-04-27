@@ -1,3 +1,4 @@
+import pygame as pg
 from game.constants import *
 
 class Card:
@@ -8,7 +9,7 @@ class Card:
         self.card_down = card_down
         self.face_down = True
 
-    def draw(self, screen, xpos, ypos):
+    def draw(self, screen, xpos, ypos, hint=False):
         if self.face_down:
             screen.blit(
                     self.card_down,
@@ -17,6 +18,13 @@ class Card:
             screen.blit(
                     self.sprite,
                     (xpos, ypos))
+
+            if hint:
+                screen.blit(
+                        self.sprite,
+                        (xpos, ypos),
+                        None,
+                        pg.BLEND_RGB_SUB)
 
     def can_go_on(self, lower_card):
         #print("self=%s"%self)
