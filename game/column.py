@@ -41,6 +41,17 @@ class Column:
         self.cards = self.cards[0:pos]
         return ret
 
+    def last_card_ypos(self):
+        ypos = PADDING
+
+        if len(self.cards) > 0:
+            down_count = self._card_down_count()
+            ypos += down_count * PADDING
+            ypos += (len(self.cards)-down_count) * self.card_gap
+
+        return ypos
+
+
     def adjust_gap(self, screen):
 
         if len(self.cards) > 0:

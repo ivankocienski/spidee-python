@@ -107,6 +107,33 @@ class Game:
             self.app.set_callback(50, flash_to)
             self.app.repaint()
 
+    class Automator:
+        def __init__(self, app):
+            self.animator_stack = []
+            self.app = app
+
+        def _tick(self):
+            def next_tick():
+                self._tick()
+            
+            anim = self.animator_stack[-1]
+            anim.tick();
+
+            if anim.has_ended(): 
+                self.animator_stack = self.animator_stack[0:(len(self.animator_stack)-1)]
+            else:
+                self.app.set_callback(2, next_tick)
+
+        def is_active(self):
+            return len(self.animator_stack) > 0
+
+        def push_animator(self, anim):
+            def tick_callback():
+                self._tick()
+
+            self.animator_stack.append(anim)
+            self.app.set_callback(2, tick_callback)
+
 
     def __init__(self, app):
         self.app          = app
@@ -123,6 +150,7 @@ class Game:
         self.done_pile = DonePile(self.card_sprites)
 
         # helper systems
+        self.automator = Game.Automator(app)
         self.hints     = None 
         self.score_box = Game.ScoreBox(self.font)
         
@@ -137,6 +165,10 @@ class Game:
         self.over      = -1
         self.over_card = None
         self.over_gap  = 0
+
+        self.hover_cards = None
+        self.hover_xpos  = 0
+        self.hover_ypos  = 0
 
         self.run_over_card = None
 
@@ -155,6 +187,20 @@ class Game:
                 x += bg_width
             y += bg_height
 
+    def set_hover_cards(self, cards):
+        if not cards:
+            self.hover_cards = None
+        elif type(cards) is Card:
+            self.hover_cards = [cards]
+        elif type(cards) is list: 
+            self.hover_cards = cards
+        else:
+            raise BaseException("Game.Automator#set_hover_cards: Unknown type '%s'"%type(cards))
+
+    def set_hover_pos(self, xpos, ypos):
+        self.hover_xpos = xpos
+        self.hover_ypos = ypos
+
     def resize(self):
         step = self.app.screen.get_width() / float(len(self.columns))
         xpos = (step - CARD_WIDTH) / 2.0
@@ -170,12 +216,18 @@ class Game:
         for i in range(0, 44):
             self.columns[i%len(self.columns)].push(self.dealer.next_card())
 
-        self.dealer.deal(self.app.screen, self.columns)
+        
+        self.automator.push_animator(Dealer.DealAnimator(self))
+        #self.dealer.deal(self.app.screen, self.columns)
 
     def mouse_move(self, xp, yp):
 
         self.drag_xpos = xp
         self.drag_ypos = yp
+
+        if self.automator.is_active():
+            return
+
 
         self.over = -1
         for i in range(0, len(self.columns)):
@@ -206,6 +258,10 @@ class Game:
         self.app.repaint()
 
     def mouse_down(self):
+
+        if self.automator.is_active():
+            return
+
         over_column = self.columns[self.over]
         if self.over_card and over_column.can_card_be_picked_up(self.over_card):
             self.drag_from_column = over_column
@@ -217,11 +273,16 @@ class Game:
             return
 
         if self.dealer.is_mouse_over(self.app.screen, self.drag_xpos, self.drag_ypos):
-            self.dealer.deal(self.app.screen, self.columns)
-            self.app.repaint()
+            self.automator.push_animator(Dealer.DealAnimator(self))
+            #self.dealer.deal(self.app.screen, self.columns)
+            #self.app.repaint()
 
 
-    def mouse_up(self):
+    def mouse_up(self): 
+
+        if self.automator.is_active():
+            return
+
         if self.drag_cards:
             try_column = self.columns[self.over]
             if try_column.can_card_be_pushed(self.drag_cards[0]):
@@ -248,6 +309,10 @@ class Game:
             self.app.repaint()
 
     def key_down(self, key):
+
+        if self.automator.is_active():
+            return
+
         if key == pg.K_m:
             for c in self.columns:
                 c.set_hint(None)
@@ -258,7 +323,6 @@ class Game:
                 self.hints = Game.Hinter(
                         self.app,
                         self.columns)
-
 
     def draw(self):
         self._draw_bg()
@@ -298,4 +362,11 @@ class Game:
                     10, 570,
                     "xoffs=%d  yoffs=%d"%(self.over_xoffs, self.over_yoffs),
                     (255,255,255))
+
+        if self.hover_cards:
+            ypos = self.hover_ypos
+            for hc in self.hover_cards:
+                hc.draw(self.app.screen, self.hover_xpos, ypos)
+                ypos += PADDING
+
 
