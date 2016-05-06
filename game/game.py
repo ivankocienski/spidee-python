@@ -4,11 +4,12 @@ import random
 import pygame as pg
 
 from game.constants import *
-from game.dealer import Dealer
-from game.card import Card
-from game.column import Column
+from game.dealer    import Dealer
+from game.card      import Card
+from game.column    import Column
 from game.done_pile import DonePile
-from game.undo import Undo
+from game.undo      import Undo
+from game.fireworks import FireworkScreen
 
 class Game:
 
@@ -150,6 +151,8 @@ class Game:
         self.dealer    = Dealer(self.card_sprites, self.card_down)
         self.done_pile = DonePile(self.card_sprites)
         self.undo      = Undo(self)
+        self.fireworks = FireworkScreen(self)
+        self.game_over = False
 
         # helper systems
         self.automator = Game.Automator(app)
@@ -227,9 +230,8 @@ class Game:
         self.drag_xpos = xp
         self.drag_ypos = yp
 
-        if self.automator.is_active():
+        if self.automator.is_active() or self.game_over:
             return
-
 
         self.over = -1
         for i in range(0, len(self.columns)):
@@ -240,16 +242,8 @@ class Game:
         if self.over == -1:
             self.over_card = None
             self.run_over_card = None
+
         else:
-            #for c in self.columns:
-            #    c.set_hint(None)
-
-            #self.run_over_card = self.columns[self.over].longest_run()
-            #if len(self.columns[self.over].cards) == 0:
-            #    self.columns[self.over].set_hint(True)
-            #else: 
-            #    self.columns[self.over].set_hint(self.run_over_card)
-
             self.over_gap = self.columns[self.over].card_gap
             found = self.columns[self.over].over_card(xp, yp)
             if found:
@@ -259,9 +253,16 @@ class Game:
 
         self.app.repaint()
 
+    def test_if_player_done(self):
+
+        if self.done_pile.is_full():
+            self.fireworks.reset()
+            self.game_over = True
+            self.app.repaint()
+            
     def mouse_down(self):
 
-        if self.automator.is_active():
+        if self.automator.is_active() or self.game_over:
             return
 
         over_column = self.columns[self.over]
@@ -283,7 +284,7 @@ class Game:
 
     def mouse_up(self): 
 
-        if self.automator.is_active():
+        if self.automator.is_active() or self.game_over:
             return
 
         if self.drag_cards:
@@ -291,9 +292,13 @@ class Game:
             if try_column.can_card_be_pushed(self.drag_cards[0]):
                 self.hints = None
 
+                card_down = False
+                last_card = self.drag_from_column.last_card()
+                if last_card:
+                    card_down = last_card.face_down
+
                 try_column.push(self.drag_cards)
                 try_column.adjust_gap(self.app.screen)
-                card_down = self.drag_from_column.last_card().face_down
                 self.drag_from_column.turn_over_top_card()
                 self.drag_from_column.adjust_gap(self.app.screen)
                 self.score_box.inc_moves()
@@ -314,8 +319,11 @@ class Game:
 
     def key_down(self, key):
 
-        if self.automator.is_active():
+        if self.automator.is_active() or self.game_over:
             return
+
+        #if key == pg.K_f:
+        #    self.automator.push_animator(FireworkAnimator(self))
 
         if key == pg.K_u:
             self.undo.pop()
@@ -350,31 +358,35 @@ class Game:
                 card.draw(self.app.screen, draw_x, draw_y)
                 draw_y += self.drag_gap
 
-        
-        self.app.draw_text(
-                self.font,
-                10, 530,
-                "over=%d"%self.over,
-                (255,255,255))
-
-
-        if self.over_card:
-            self.app.draw_text(
-                    self.font,
-                    10, 550,
-                    "card=%s"%self.over_card,
-                    (255,255,255))
-
-            self.app.draw_text(
-                    self.font,
-                    10, 570,
-                    "xoffs=%d  yoffs=%d"%(self.over_xoffs, self.over_yoffs),
-                    (255,255,255))
-
         if self.hover_cards:
             ypos = self.hover_ypos
             for hc in self.hover_cards:
                 hc.draw(self.app.screen, self.hover_xpos, ypos)
                 ypos += PADDING
+
+        if self.game_over:
+            self.fireworks.draw()
+            self.app.repaint()
+        
+        #self.app.draw_text(
+                #self.font,
+                #10, 530,
+                #"#over=%d"%self.over,
+                #(#255,255,255))
+
+
+        #if self.over_card:
+            #self.app.draw_text(
+                    #self.font,
+                    #10, 550,
+                    #"#card=%s"%self.over_card,
+                    #(#255,255,255))
+
+            #self.app.draw_text(
+                    #self.font,
+                    #10, 570,
+                    #"#xoffs=%d  yoffs=%d"%(self.over_xoffs, self.over_yoffs),
+                    #(#255,255,255))
+
 
 

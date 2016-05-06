@@ -1,4 +1,3 @@
-
 from game.constants import *
 from game.dealer import Dealer
 from game.card import Card
@@ -43,7 +42,9 @@ class Undo:
 
             if self.slide_count == 0:
                 if self.from_card_down:
-                    self.from_column.last_card().face_down = True
+                    last_card = self.from_column.last_card()
+                    if last_card:
+                        last_card.face_down = True
 
                 self.from_column.push(self.slide_cards)
                 self.from_column.adjust_gap(self.game.app.screen)
@@ -70,6 +71,7 @@ class Undo:
         if len(self.move_stack) == 0:
             return
 
+        self.game.score_box.inc_moves()
         self.game.automator.push_animator(Undo.UndoSlide(self.game, self.move_stack[-1])) 
         self.move_stack = self.move_stack[0:(len(self.move_stack)-1)]
 

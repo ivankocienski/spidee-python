@@ -26,7 +26,7 @@ class Dealer:
         
         def has_ended(self):
             return self.done
-
+        
         def tick(self):
             if self.done:
                 return

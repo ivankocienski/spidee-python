@@ -10,6 +10,9 @@ class DonePile:
     def set_hover_card(self, card):
         self.hover_card = card
 
+    def is_full(self):
+        return self.done_count == 8
+
     def deposite_run(self):
         self.done_count += 1
         self.hover_card  = None

@@ -22,8 +22,6 @@ class Column:
             self.target_xpos = game.done_pile.target_xpos()
             self.target_ypos = game.done_pile.target_ypos(game.app.screen)
             
-            
-
         def has_ended(self):
             return self.column_card_count == 0
 
@@ -43,6 +41,7 @@ class Column:
                     self.from_column.adjust_gap(self.app.screen)
                     self.game.score_box.inc_score()
                     self.game.set_hover_cards(None)
+                    self.game.test_if_player_done()
                     return
 
                 if self.slide_card:
