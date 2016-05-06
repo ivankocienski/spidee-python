@@ -10,7 +10,7 @@ class Column:
             self.game        = game
             self.app         = game.app
 
-            self.column_card_count = 13 
+            self.column_card_count = 14 
 
             self.slide_count  = 0
             self.slide_card   = None

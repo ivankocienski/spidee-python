@@ -8,6 +8,7 @@ from game.dealer import Dealer
 from game.card import Card
 from game.column import Column
 from game.done_pile import DonePile
+from game.undo import Undo
 
 class Game:
 
@@ -148,6 +149,7 @@ class Game:
         self.columns   = [ Column(self.card_empty) for x in range(10)]
         self.dealer    = Dealer(self.card_sprites, self.card_down)
         self.done_pile = DonePile(self.card_sprites)
+        self.undo      = Undo(self)
 
         # helper systems
         self.automator = Game.Automator(app)
@@ -274,6 +276,7 @@ class Game:
 
         if self.dealer.is_mouse_over(self.app.screen, self.drag_xpos, self.drag_ypos):
             self.automator.push_animator(Dealer.DealAnimator(self))
+            self.undo.flush()
             #self.dealer.deal(self.app.screen, self.columns)
             #self.app.repaint()
 
@@ -290,19 +293,18 @@ class Game:
 
                 try_column.push(self.drag_cards)
                 try_column.adjust_gap(self.app.screen)
+                card_down = self.drag_from_column.last_card().face_down
                 self.drag_from_column.turn_over_top_card()
                 self.drag_from_column.adjust_gap(self.app.screen)
                 self.score_box.inc_moves()
 
                 column_run = try_column.ends_in_run()
                 if column_run:
+                    self.undo.flush()
                     self.automator.push_animator(Column.RunAnimator(self, try_column))
 
-                    #self.done_pile.deposite_run()
-                    #try_column.pop(column_run)
-                    #try_column.turn_over_top_card()
-                    #try_column.adjust_gap(self.app.screen)
-                    #self.score_box.inc_score()
+                else:
+                    self.undo.push(self.drag_from_column, card_down, try_column, self.drag_cards[0])
 
             else:
                 self.drag_from_column.push(self.drag_cards)
@@ -313,6 +315,10 @@ class Game:
     def key_down(self, key):
 
         if self.automator.is_active():
+            return
+
+        if key == pg.K_u:
+            self.undo.pop()
             return
 
         if key == pg.K_m:
