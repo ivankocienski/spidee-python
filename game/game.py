@@ -296,11 +296,13 @@ class Game:
 
                 column_run = try_column.ends_in_run()
                 if column_run:
-                    self.done_pile.deposite_run()
-                    try_column.pop(column_run)
-                    try_column.turn_over_top_card()
-                    try_column.adjust_gap(self.app.screen)
-                    self.score_box.inc_score()
+                    self.automator.push_animator(Column.RunAnimator(self, try_column))
+
+                    #self.done_pile.deposite_run()
+                    #try_column.pop(column_run)
+                    #try_column.turn_over_top_card()
+                    #try_column.adjust_gap(self.app.screen)
+                    #self.score_box.inc_score()
 
             else:
                 self.drag_from_column.push(self.drag_cards)

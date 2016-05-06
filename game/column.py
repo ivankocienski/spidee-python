@@ -3,6 +3,71 @@ from game.constants import *
 from game.card import Card
 
 class Column:
+
+    class RunAnimator:
+        def __init__(self, game, from_column):
+            self.from_column = from_column
+            self.game        = game
+            self.app         = game.app
+
+            self.column_card_count = 13 
+
+            self.slide_count  = 0
+            self.slide_card   = None
+            self.slide_xpos   = 0
+            self.slide_ypos   = 0
+            self.slide_xdelta = 0
+            self.slide_ydelta = 0
+
+            self.target_xpos = game.done_pile.target_xpos()
+            self.target_ypos = game.done_pile.target_ypos(game.app.screen)
+            
+            
+
+        def has_ended(self):
+            return self.column_card_count == 0
+
+        def tick(self):
+            if self.has_ended():
+                return
+
+            self.app.repaint()
+            
+            if self.slide_count == 0:
+
+                self.column_card_count -= 1
+                if self.column_card_count == 0:
+                    self.game.done_pile.deposite_run()
+
+                    self.from_column.turn_over_top_card()
+                    self.from_column.adjust_gap(self.app.screen)
+                    self.game.score_box.inc_score()
+                    self.game.set_hover_cards(None)
+                    return
+
+                if self.slide_card:
+                    self.game.done_pile.set_hover_card(self.slide_card)
+
+                self.slide_count = 3
+                self.slide_card  = self.from_column.last_card()
+                self.slide_ypos  = self.from_column.last_card_ypos()
+                self.slide_xpos  = self.from_column.pos
+
+                self.game.set_hover_cards(self.slide_card)
+
+                self.slide_xdelta = (self.target_xpos-self.slide_xpos)/(self.slide_count+1)
+                self.slide_ydelta = (self.target_ypos-self.slide_ypos)/(self.slide_count+1)
+                
+                self.from_column.pop(self.slide_card)
+
+            
+            self.slide_count -= 1
+
+            self.slide_xpos += self.slide_xdelta
+            self.slide_ypos += self.slide_ydelta
+
+            self.game.set_hover_pos(self.slide_xpos, self.slide_ypos)
+
     def __init__(self, empty_card): 
         self.empty_card = empty_card
         self.cards      = []
@@ -40,6 +105,12 @@ class Column:
         ret = self.cards[pos:len(self.cards)]
         self.cards = self.cards[0:pos]
         return ret
+
+    def last_card(self):
+        if len(self.cards) == 0:
+            return None
+        
+        return self.cards[-1]
 
     def last_card_ypos(self):
         ypos = PADDING
@@ -119,11 +190,6 @@ class Column:
 
         return True
 
-    def last_card(self):
-        if len(self.cards) == 0:
-            return None
-        
-        return self.cards[-1]
 
     def can_card_be_pushed(self, card):
         return len(self.cards) == 0 or card.can_go_on(self.last_card())
