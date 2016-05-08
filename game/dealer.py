@@ -36,12 +36,12 @@ class Dealer:
             if self.slide_count == 0:
 
                 self.column_num += 1
+                self.game.snd_play(SND_DEAL)
 
                 if self.column_num > 0:
 
                     # push what we were holding
                     self.columns[self.column_num-1].push(self.slide_card)
-                    self.game.snd_play(SND_PUT_DOWN)
 
                     # stop now
                     if self.column_num > 9:
@@ -77,10 +77,11 @@ class Dealer:
             self.game.set_hover_pos(self.slide_xpos, self.slide_ypos)
 
 
-    def __init__(self, card_sprites, down_card):
+    def __init__(self, card_sprites, hint_card, down_card):
         self.xpos = 0
         self.ypos = 0
         self.card_down    = down_card
+        self.card_hint    = hint_card
         self.card_sprites = card_sprites
 
     def next_card(self):
@@ -120,7 +121,7 @@ class Dealer:
 
         # build deck
         self.source_deck  = [
-                Card(x%CARD_COUNT, SUIT_CLUBS, self.card_sprites, self.card_down)
+                Card(x % CARD_COUNT, SUIT_CLUBS, self.card_sprites, self.card_hint, self.card_down)
                 for x in range(0, 104)]
         
         # shuffle deck

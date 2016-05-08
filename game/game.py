@@ -104,13 +104,13 @@ class Game:
             def flash_to():
                 from_column.set_hint(None);
                 to_column.hint_last_card()
-                self.app.set_callback(50, flash_stop)
+                self.app.set_callback(30, flash_stop)
                 self.app.repaint()
 
             self.game.snd_play(SND_HINT)
 
             from_column.set_hint(from_card)
-            self.app.set_callback(50, flash_to)
+            self.app.set_callback(30, flash_to)
             self.app.repaint()
 
     class Automator:
@@ -163,7 +163,7 @@ class Game:
 
         # game structures
         self.columns   = [ Column(self.card_empty) for x in range(10)]
-        self.dealer    = Dealer(self.card_sprites, self.card_down)
+        self.dealer    = Dealer(self.card_sprites, self.card_hint, self.card_down)
         self.done_pile = DonePile(self.card_sprites)
         self.undo      = Undo(self)
         self.fireworks = FireworkScreen(self)
@@ -295,8 +295,7 @@ class Game:
         if self.dealer.is_mouse_over(self.app.screen, self.drag_xpos, self.drag_ypos):
             self.automator.push_animator(Dealer.DealAnimator(self))
             self.undo.flush()
-            #self.dealer.deal(self.app.screen, self.columns)
-            #self.app.repaint()
+            self.hints = None
 
 
     def mouse_up(self): 

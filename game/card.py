@@ -2,11 +2,12 @@ import pygame as pg
 from game.constants import *
 
 class Card:
-    def __init__(self, number, suit, card_sprites, card_down):
+    def __init__(self, number, suit, card_sprites, card_hint, card_down):
         self.number    = number
         self.suit      = suit
         self.sprite    = card_sprites[number]
         self.card_down = card_down
+        self.card_hint = card_hint
         self.face_down = True
 
     def draw(self, screen, xpos, ypos, hint=False):
@@ -14,17 +15,17 @@ class Card:
             screen.blit(
                     self.card_down,
                     (xpos, ypos))
-        else:
-            screen.blit(
-                    self.sprite,
-                    (xpos, ypos))
+            return
 
-            if hint:
-                screen.blit(
-                        self.sprite,
-                        (xpos, ypos),
-                        None,
-                        pg.BLEND_RGB_SUB)
+        if hint:
+            screen.blit(
+                    self.card_hint,
+                    (xpos, ypos))
+            return
+
+        screen.blit(
+                self.sprite,
+                (xpos, ypos))
 
     def can_go_on(self, lower_card):
         #print("self=%s"%self)
