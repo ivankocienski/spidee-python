@@ -41,6 +41,9 @@ class Undo:
             self.game.app.repaint()
 
             if self.slide_count == 0:
+
+                self.game.snd_play(SND_PUT_DOWN)
+
                 if self.from_card_down:
                     last_card = self.from_column.last_card()
                     if last_card:

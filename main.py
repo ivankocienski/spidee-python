@@ -6,9 +6,10 @@ import pygame as pg
 from game.game import Game
 
 class Loader:
-    def __init__(self, screen, base):
+    def __init__(self, screen, base, sound_capable):
         self.base_dir = base
         self.screen   = screen
+        self.sound_capable = sound_capable
 
     def load_image(self, path):
         print("load_image: %s" % path)
@@ -23,7 +24,12 @@ class Loader:
         return fnt
 
     def load_wav(self, path):
-        pass
+        print("load_wav: %s" % path)
+        if not self.sound_capable:
+            return None
+
+        snd = pg.mixer.Sound(os.path.join(self.base_dir, path))
+        return snd
 
 class App:
 
@@ -32,8 +38,14 @@ class App:
         print("pygame ver=%s"%pg.version.ver)
         pg.init()
         pg.font.init()
+
+        pg.mixer.init(22050, 16, 2)
+        self.sound_capable = bool(pg.mixer.get_init())
+        print("sound: %s"%self.sound_capable)
+            
+
         self.screen = pg.display.set_mode([800, 600])
-        self.loader = Loader(self.screen, os.getcwd() + "/data")
+        self.loader = Loader(self.screen, os.getcwd() + "/data", self.sound_capable)
         self.repaint()
         self.callback_count = 0
         self.callback_code = None

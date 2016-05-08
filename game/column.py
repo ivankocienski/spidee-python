@@ -33,6 +33,8 @@ class Column:
             
             if self.slide_count == 0:
 
+                self.game.snd_play(SND_PUT_DOWN)
+
                 self.column_card_count -= 1
                 if self.column_card_count == 0:
                     self.game.done_pile.deposite_run()

@@ -63,8 +63,9 @@ class Game:
                     (xpos + 55, ypos + 55))
 
     class Hinter:
-        def __init__(self, app, columns):
-            self.app      = app
+        def __init__(self, game, columns):
+            self.app      = game.app
+            self.game     = game
             self.columns  = columns
             self.hints    = []
             self.hint_pos = 0
@@ -88,6 +89,7 @@ class Game:
 
         def flash_next(self):
             if len(self.hints) == 0:
+                self.game.snd_play(SND_NO_HINT)
                 return
 
             from_column = self.hints[self.hint_pos][0]
@@ -104,6 +106,8 @@ class Game:
                 to_column.hint_last_card()
                 self.app.set_callback(50, flash_stop)
                 self.app.repaint()
+
+            self.game.snd_play(SND_HINT)
 
             from_column.set_hint(from_card)
             self.app.set_callback(50, flash_to)
@@ -145,6 +149,17 @@ class Game:
         self.card_down    = app.loader.load_image("card-down.png")
         self.card_hint    = app.loader.load_image("card-hint.png")
         self.font         = app.loader.load_ttf("liberation-sans.ttf", 15)
+
+        self.snd_capable = app.sound_capable
+        self.snd_enabled = True
+        self.snd_samples = [
+                app.loader.load_wav("click-deal.wav"),
+                app.loader.load_wav("click-pick-up.wav"),
+                app.loader.load_wav("click-put-down.wav"),
+                app.loader.load_wav("hint.wav"),
+                app.loader.load_wav("no-hint.wav"),
+                app.loader.load_wav("win.wav")
+                ]
 
         # game structures
         self.columns   = [ Column(self.card_empty) for x in range(10)]
@@ -256,6 +271,7 @@ class Game:
     def test_if_player_done(self):
 
         if self.done_pile.is_full():
+            self.snd_play(SND_GAME_OVER)
             self.fireworks.reset()
             self.game_over = True
             self.app.repaint()
@@ -267,6 +283,7 @@ class Game:
 
         over_column = self.columns[self.over]
         if self.over_card and over_column.can_card_be_picked_up(self.over_card):
+            self.snd_play(SND_PICK_UP)
             self.drag_from_column = over_column
             self.drag_cards = over_column.pop(self.over_card)
             self.drag_xoffs = self.over_xoffs
@@ -309,9 +326,11 @@ class Game:
                     self.automator.push_animator(Column.RunAnimator(self, try_column))
 
                 else:
+                    self.snd_play(SND_PUT_DOWN)
                     self.undo.push(self.drag_from_column, card_down, try_column, self.drag_cards[0])
 
             else:
+                self.snd_play(SND_PUT_DOWN)
                 self.drag_from_column.push(self.drag_cards)
 
             self.drag_cards = None
@@ -329,6 +348,9 @@ class Game:
             self.undo.pop()
             return
 
+        if key == pg.K_s:
+            self.snd_play(SND_NO_HINT)
+
         if key == pg.K_m:
             for c in self.columns:
                 c.set_hint(None)
@@ -337,7 +359,7 @@ class Game:
                 self.hints.flash_next()
             else:
                 self.hints = Game.Hinter(
-                        self.app,
+                        self,
                         self.columns)
 
     def draw(self):
@@ -388,5 +410,8 @@ class Game:
                     #"#xoffs=%d  yoffs=%d"%(self.over_xoffs, self.over_yoffs),
                     #(#255,255,255))
 
+    def snd_play(self, sound_id):
+        if self.snd_capable and self.snd_enabled:
+            self.snd_samples[sound_id].play()
 
 
