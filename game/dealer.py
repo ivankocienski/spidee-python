@@ -124,6 +124,8 @@ class Dealer:
                 Card(x % CARD_COUNT, SUIT_CLUBS, self.card_sprites, self.card_hint, self.card_down)
                 for x in range(0, 104)]
         
+        #return
+
         # shuffle deck
         for i in range(0, len(self.source_deck)):
             other = random.randint(0, len(self.source_deck)-1)

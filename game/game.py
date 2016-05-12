@@ -14,9 +14,10 @@ from game.fireworks import FireworkScreen
 class Game:
 
     class ScoreBox:
-        def __init__(self, font):
-            self.font  = font
-            self.color = (255,255,255)
+        def __init__(self, screen, font):
+            self.screen = screen
+            self.font   = font
+            self.color  = (255,255,255)
             self.reset()
         
         def reset(self):
@@ -36,6 +37,20 @@ class Game:
             self.score      -= 1
             self.move_count += 1
             self._render()
+
+        def is_over(self, px, py):
+            box_w = 200
+            box_h = CARD_HEIGHT
+            xpos = (self.screen.get_width() - box_w) / 2
+            ypos = self.screen.get_height() - PADDING - box_h
+
+            if px < xpos or py < ypos:
+                return False
+
+            if px >= xpos+box_w or py >= ypos+box_h:
+                return False
+
+            return True
 
         def draw(self, screen):
 
@@ -162,7 +177,7 @@ class Game:
                 ]
 
         # game structures
-        self.columns   = [ Column(self.card_empty) for x in range(10)]
+        self.columns   = [ Column(self.card_empty, self.card_hint) for x in range(10)]
         self.dealer    = Dealer(self.card_sprites, self.card_hint, self.card_down)
         self.done_pile = DonePile(self.card_sprites)
         self.undo      = Undo(self)
@@ -172,7 +187,7 @@ class Game:
         # helper systems
         self.automator = Game.Automator(app)
         self.hints     = None 
-        self.score_box = Game.ScoreBox(self.font)
+        self.score_box = Game.ScoreBox(self.app.screen, self.font)
         
         self.drag_cards       = None
         self.drag_from_column = None
@@ -207,6 +222,17 @@ class Game:
                 x += bg_width
             y += bg_height
 
+    def _next_hint(self):
+        for c in self.columns:
+            c.set_hint(None)
+
+        if self.hints:
+            self.hints.flash_next()
+        else:
+            self.hints = Game.Hinter(
+                    self,
+                    self.columns)
+    
     def set_hover_cards(self, cards):
         if not cards:
             self.hover_cards = None
@@ -281,6 +307,10 @@ class Game:
         if self.automator.is_active() or self.game_over:
             return
 
+        if self.score_box.is_over(self.drag_xpos, self.drag_ypos):
+            self._next_hint()
+            return 
+
         over_column = self.columns[self.over]
         if self.over_card and over_column.can_card_be_picked_up(self.over_card):
             self.snd_play(SND_PICK_UP)
@@ -340,26 +370,12 @@ class Game:
         if self.automator.is_active() or self.game_over:
             return
 
-        #if key == pg.K_f:
-        #    self.automator.push_animator(FireworkAnimator(self))
-
         if key == pg.K_u:
             self.undo.pop()
             return
 
-        if key == pg.K_s:
-            self.snd_play(SND_NO_HINT)
-
         if key == pg.K_m:
-            for c in self.columns:
-                c.set_hint(None)
-
-            if self.hints:
-                self.hints.flash_next()
-            else:
-                self.hints = Game.Hinter(
-                        self,
-                        self.columns)
+            self._next_hint()
 
     def draw(self):
         self._draw_bg()

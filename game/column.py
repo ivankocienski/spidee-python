@@ -33,7 +33,7 @@ class Column:
             
             if self.slide_count == 0:
 
-                self.game.snd_play(SND_PUT_DOWN)
+                self.game.snd_play(SND_DEAL)
 
                 self.column_card_count -= 1
                 if self.column_card_count == 0:
@@ -69,8 +69,9 @@ class Column:
 
             self.game.set_hover_pos(self.slide_xpos, self.slide_ypos)
 
-    def __init__(self, empty_card): 
+    def __init__(self, empty_card, hint_card): 
         self.empty_card = empty_card
+        self.hint_card  = hint_card
         self.cards      = []
         self.pos        = 0
         self.card_gap   = PADDING
@@ -199,7 +200,10 @@ class Column:
         self.card_hint = card
 
     def hint_last_card(self):
-        self.card_hint = self.last_card()
+        if len(self.cards) == 0:
+            self.card_hint = True
+        else:
+            self.card_hint = self.last_card()
 
     def is_point_over(self, xp, yp):
         if xp < self.pos or xp >= (self.pos+CARD_WIDTH):
@@ -238,12 +242,7 @@ class Column:
     def draw(self, screen):
         if len(self.cards) == 0:
             if self.card_hint:
-                screen.blit(
-                        self.empty_card,
-                        (self.pos, PADDING),
-                        None,
-                        pg.BLEND_RGB_SUB)
-
+                screen.blit(self.hint_card, (self.pos, PADDING))
             else:
                 screen.blit(self.empty_card, (self.pos, PADDING))
 
