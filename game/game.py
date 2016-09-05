@@ -347,7 +347,8 @@ class Game:
                 try_column.adjust_gap(self.app.screen)
                 self.drag_from_column.turn_over_top_card()
                 self.drag_from_column.adjust_gap(self.app.screen)
-                self.score_box.inc_moves()
+                if try_column != self.drag_from_column:
+                    self.score_box.inc_moves()
 
                 column_run = try_column.ends_in_run()
                 if column_run:

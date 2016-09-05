@@ -146,7 +146,8 @@ class Column:
             return None
 
         for i in range(0, CARD_COUNT):
-            if self.cards[-i-1].number != i:
+            card =  self.cards[-i-1]
+            if card.face_down or card.number != i:
                 return None
 
         return self.cards[-CARD_COUNT]
