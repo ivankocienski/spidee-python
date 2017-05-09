@@ -311,6 +311,9 @@ class Game:
             self._next_hint()
             return 
 
+        if self.drag_cards:
+            return
+
         over_column = self.columns[self.over]
         if self.over_card and over_column.can_card_be_picked_up(self.over_card):
             self.snd_play(SND_PICK_UP)
@@ -335,7 +338,7 @@ class Game:
 
         if self.drag_cards:
             try_column = self.columns[self.over]
-            if try_column.can_card_be_pushed(self.drag_cards[0]):
+            if self.over > -1 and try_column.can_card_be_pushed(self.drag_cards[0]):
                 self.hints = None
 
                 card_down = False
